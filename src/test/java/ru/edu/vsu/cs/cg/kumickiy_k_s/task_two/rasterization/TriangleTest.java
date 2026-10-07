@@ -12,7 +12,6 @@ class TriangleTest {
                 10, 10, Color.AQUA,
                 20, 8, Color.CHOCOLATE,
                 15, 15, Color.RED);
-        assertEquals(8,trig.getUpperY());
     }
 
 }

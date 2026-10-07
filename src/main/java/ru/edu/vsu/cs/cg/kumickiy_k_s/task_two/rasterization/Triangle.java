@@ -1,10 +1,8 @@
 package ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.rasterization;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.paint.Color;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Triangle implements RasterizedShape{
     public static class Point {
@@ -43,9 +41,9 @@ public class Triangle implements RasterizedShape{
         }
     }
 
-    private Point upperPoint;
-    private Point middlePoint;
-    private Point lowerPoint;
+    private final Point topPoint;
+    private final Point middlePoint;
+    private final Point bottomPoint;
 
     public Triangle(
             int x1, int y1, Color c1,
@@ -59,18 +57,51 @@ public class Triangle implements RasterizedShape{
        Point[] sortedPoints = {p1, p2, p3};
        sortPoints(sortedPoints);
 
-       this.upperPoint = sortedPoints[0];
+       this.topPoint = sortedPoints[0];
        this.middlePoint = sortedPoints[1];
-       this.lowerPoint = sortedPoints[2];
+       this.bottomPoint = sortedPoints[2];
     }
 
     @Override
     public void draw(GraphicsContext graphicsContext) {
-
+        PixelWriter pixelWriter = graphicsContext.getPixelWriter();
+        drawSplit(pixelWriter, topPoint, middlePoint, bottomPoint);
+        drawSplit(pixelWriter, bottomPoint, middlePoint, topPoint);
     }
 
-    public int getUpperY() {
-        return upperPoint.getY();
+    private static void drawSplit(PixelWriter pixelWriter, Point top, Point low, Point lerped) {
+        Point left;
+        Point right;
+        if (low.getX() < lerped.getX()) {
+            left = low;
+            right = lerped;
+        } else {
+            left = lerped;
+            right = low;
+        }
+
+        if (top.getY() <= low.getY()) {
+            for (int y = top.getY(); y <= low.getY(); y++) {
+                drawLine(pixelWriter, y, top, left, right);
+            }
+        } else {
+            for (int y = top.getY(); y >= low.getY(); y--) {
+                drawLine(pixelWriter, y, top, left, right);
+            }
+        }
+    }
+
+    private static void drawLine(PixelWriter pixelWriter, int y, Point top, Point left, Point right) {
+        int xLeft = getLerpedXByY(y, top, left);
+        int xRight = getLerpedXByY(y, top, right);
+        for (int x = xLeft; x <= xRight; x++) {
+            pixelWriter.setColor(x, y, Color.BLACK);
+        }
+    }
+
+    private static int getLerpedXByY(int y, Point startPoint, Point endPoint) {
+        return (int)(startPoint.getX() + (endPoint.getX() - startPoint.getX()) *
+                (double)(y - startPoint.getY()) / (endPoint.getY() - startPoint.getY()));
     }
 
     private static void sortPoints(Point[] points) {
