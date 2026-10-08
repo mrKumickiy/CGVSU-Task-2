@@ -5,7 +5,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.paint.Color;
 
 public class Triangle implements RasterizedShape{
-    public static class Point {
+    private static class Point {
         private int x;
         private int y;
         private Color color;
@@ -41,6 +41,9 @@ public class Triangle implements RasterizedShape{
         }
     }
 
+    private record BarycentricCoordinates(double alpha, double beta, double gamma) {
+    }
+
     private final Point topPoint;
     private final Point middlePoint;
     private final Point bottomPoint;
@@ -64,12 +67,46 @@ public class Triangle implements RasterizedShape{
 
     @Override
     public void draw(GraphicsContext graphicsContext) {
+        if (graphicsContext == null) {
+            return;
+        }
         PixelWriter pixelWriter = graphicsContext.getPixelWriter();
         drawSplit(pixelWriter, topPoint, middlePoint, bottomPoint);
         drawSplit(pixelWriter, bottomPoint, middlePoint, topPoint);
     }
 
-    private static void drawSplit(PixelWriter pixelWriter, Point top, Point low, Point lerped) {
+    private BarycentricCoordinates getBarycentricCoordinatesForPoint(int x, int y) {
+        double det = (topPoint.getX() - bottomPoint.getX()) * (middlePoint.getY() - bottomPoint.getY()) -
+                (middlePoint.getX() - bottomPoint.getX()) * (topPoint.getY() - bottomPoint.getY());
+        double det1 = (x - bottomPoint.getX()) * (middlePoint.getY() - bottomPoint.getY()) -
+                (middlePoint.getX() - bottomPoint.getX()) * (y - bottomPoint.getY());
+        double det2 = (topPoint.getX() - bottomPoint.getX()) * (y - bottomPoint.getY()) -
+                (x - bottomPoint.getX()) * (topPoint.getY() - bottomPoint.getY());
+        double alpha = Math.max(det1 / det, 0);
+        double beta = Math.max(det2 / det, 0);
+        double gamma = Math.max(1 - alpha - beta, 0);
+
+        return new BarycentricCoordinates(alpha, beta, gamma);
+    }
+
+    private Color getColorInPoint(int x, int y) {
+        BarycentricCoordinates barycentricCoords = getBarycentricCoordinatesForPoint(x, y);
+        double red = barycentricCoords.alpha() * topPoint.getColor().getRed() +
+                barycentricCoords.beta() * middlePoint.getColor().getRed() +
+                barycentricCoords.gamma() * bottomPoint.getColor().getRed();
+
+        double green = barycentricCoords.alpha() * topPoint.getColor().getGreen() +
+                barycentricCoords.beta() * middlePoint.getColor().getGreen() +
+                barycentricCoords.gamma() * bottomPoint.getColor().getGreen();
+
+        double blue = barycentricCoords.alpha() * topPoint.getColor().getBlue() +
+                barycentricCoords.beta() * middlePoint.getColor().getBlue() +
+                barycentricCoords.gamma() * bottomPoint.getColor().getBlue();
+
+        return new Color(red, green, blue, 1);
+    }
+
+    private void drawSplit(PixelWriter pixelWriter, Point top, Point low, Point lerped) {
         Point left;
         Point right;
         if (low.getX() < lerped.getX()) {
@@ -91,11 +128,11 @@ public class Triangle implements RasterizedShape{
         }
     }
 
-    private static void drawLine(PixelWriter pixelWriter, int y, Point top, Point left, Point right) {
+    private void drawLine(PixelWriter pixelWriter, int y, Point top, Point left, Point right) {
         int xLeft = getLerpedXByY(y, top, left);
         int xRight = getLerpedXByY(y, top, right);
         for (int x = xLeft; x <= xRight; x++) {
-            pixelWriter.setColor(x, y, Color.BLACK);
+            pixelWriter.setColor(x, y, getColorInPoint(x ,y));
         }
     }
 

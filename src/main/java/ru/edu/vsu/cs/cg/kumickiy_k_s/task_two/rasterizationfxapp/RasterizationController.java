@@ -26,9 +26,9 @@ public class RasterizationController {
         anchorPane.prefHeightProperty().addListener((ov, oldValue, newValue) -> canvas.setHeight(newValue.doubleValue()));
 
         RasterizedShape trig0 = new Triangle(
-                200, 50, Color.BLACK,
-                200,300,Color.BLACK,
-                200, 500, Color.BLACK);
+                200, 50, Color.RED,
+                50,300,Color.GREEN,
+                300, 500, Color.BLUE);
         RasterizedShape trig1 = new Triangle(
                 400, 50, Color.BLACK,
                 450,50,Color.BLACK,
