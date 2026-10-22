@@ -2,6 +2,8 @@ module ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.rasterizationfxapp {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.desktop;
+    requires javafx.graphics;
+    //requires ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.rasterizationfxapp;
 
 
     opens ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.rasterizationfxapp to javafx.fxml;
