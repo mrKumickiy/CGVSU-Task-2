@@ -4,13 +4,12 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.paint.Color;
 import ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.shapes.Vertex;
+import ru.edu.vsu.cs.cg.kumickiy_k_s.task_two.tools.BarycentricCoordinates;
 
 import java.util.Arrays;
 
 public class TriangleRasterizationV1 implements Rasterization {
-    private record BarycentricCoordinates(double alpha, double beta, double gamma) {
-    }
-    private class PlacedVertices {
+    private static class PlacedVertices {
         private final Vertex top;
         private final Vertex middle;
         private final Vertex bottom;
@@ -21,14 +20,18 @@ public class TriangleRasterizationV1 implements Rasterization {
             this.middle = sortedVertices[1];
             this.bottom = sortedVertices[2];
         }
+
+        public Vertex[] toArray() {
+            Vertex[] arr = new Vertex[3];
+            arr[0] = top;
+            arr[1] = middle;
+            arr[2] = bottom;
+            return arr;
+        }
     }
-    //private Vertex topVertex;
-    //private Vertex middleVertex;
-    //private Vertex bottomVertex;
 
     public TriangleRasterizationV1() {
     }
-
 
     @Override
     public void draw(GraphicsContext graphicsContext, Vertex[] vertices) {
@@ -53,33 +56,19 @@ public class TriangleRasterizationV1 implements Rasterization {
                 placedVertices.top, placedVertices);
     }
 
-    private static BarycentricCoordinates getBarycentricCoordinatesForPoint(int x, int y, PlacedVertices placed) {
-        double det = (placed.top.getX() - placed.bottom.getX()) * (placed.middle.getY() - placed.bottom.getY()) -
-                (placed.middle.getX() - placed.bottom.getX()) * (placed.top.getY() - placed.bottom.getY());
-        double det1 = (x - placed.bottom.getX()) * (placed.middle.getY() - placed.bottom.getY()) -
-                (placed.middle.getX() - placed.bottom.getX()) * (y - placed.bottom.getY());
-        double det2 = (placed.top.getX() - placed.bottom.getX()) * (y - placed.bottom.getY()) -
-                (x - placed.bottom.getX()) * (placed.top.getY() - placed.bottom.getY());
-        double alpha = Math.clamp(det1 / det, 0, 1);
-        double beta = Math.clamp(det2 / det, 0, 1);
-        double gamma = Math.clamp(1 - alpha - beta, 0, 1);
-
-        return new BarycentricCoordinates(alpha, beta, gamma);
-    }
-
     private static Color getColorInPoint(int x, int y, PlacedVertices placed) {
-        BarycentricCoordinates barycentricCoords = getBarycentricCoordinatesForPoint(x, y, placed);
-        double red = barycentricCoords.alpha() * placed.top.getColor().getRed() +
-                barycentricCoords.beta() * placed.middle.getColor().getRed() +
-                barycentricCoords.gamma() * placed.bottom.getColor().getRed();
+        BarycentricCoordinates barycentricCoords = BarycentricCoordinates.getBarycentricCoordinatesForPoint(x, y, placed.toArray());
+        double red = barycentricCoords.getAlpha() * placed.top.getColor().getRed() +
+                barycentricCoords.getBeta() * placed.middle.getColor().getRed() +
+                barycentricCoords.getGamma() * placed.bottom.getColor().getRed();
 
-        double green = barycentricCoords.alpha() * placed.top.getColor().getGreen() +
-                barycentricCoords.beta() * placed.middle.getColor().getGreen() +
-                barycentricCoords.gamma() * placed.bottom.getColor().getGreen();
+        double green = barycentricCoords.getAlpha() * placed.top.getColor().getGreen() +
+                barycentricCoords.getBeta() * placed.middle.getColor().getGreen() +
+                barycentricCoords.getGamma() * placed.bottom.getColor().getGreen();
 
-        double blue = barycentricCoords.alpha() * placed.top.getColor().getBlue() +
-                barycentricCoords.beta() * placed.middle.getColor().getBlue() +
-                barycentricCoords.gamma() * placed.bottom.getColor().getBlue();
+        double blue = barycentricCoords.getAlpha() * placed.top.getColor().getBlue() +
+                barycentricCoords.getBeta() * placed.middle.getColor().getBlue() +
+                barycentricCoords.getGamma() * placed.bottom.getColor().getBlue();
 
         return new Color(red, green, blue, 1);
     }
